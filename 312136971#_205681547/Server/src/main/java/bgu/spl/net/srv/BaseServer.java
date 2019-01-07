@@ -17,7 +17,7 @@ public abstract class BaseServer<T> implements Server<T> {
     private final Supplier<BidiMessagingProtocol<T>> protocolFactory;
     private final Supplier<MessageEncoderDecoder<T>> encdecFactory;
     private ServerSocket sock;
-    private AtomicInteger connectionId;
+    private int connectionId;
     private ConnectionsImpl<T> connections;
 
     public BaseServer(
@@ -29,7 +29,7 @@ public abstract class BaseServer<T> implements Server<T> {
         this.protocolFactory = protocolFactory;
         this.encdecFactory = encdecFactory;
         this.sock = null;
-        this.connectionId = new AtomicInteger(0);
+        this.connectionId = 0;
         this.connections = new ConnectionsImpl<>();
     }
 
@@ -47,7 +47,7 @@ public abstract class BaseServer<T> implements Server<T> {
 
                 BlockingConnectionHandler<T> handler = new BlockingConnectionHandler<>(
                         clientSock, encdecFactory.get(), protocolFactory.get(),
-                        connectionId.getAndIncrement(), connections);
+                        connectionId++, connections);
                 execute(handler);
             }
         } catch (IOException ex) {

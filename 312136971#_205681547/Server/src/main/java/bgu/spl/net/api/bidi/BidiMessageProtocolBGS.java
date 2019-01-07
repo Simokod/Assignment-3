@@ -103,7 +103,6 @@ public class BidiMessageProtocolBGS implements BidiMessagingProtocol<BGSMessage>
             return;
         }
         ACKMessage ack = new ACKMessage(message.getOpCode());
-        //TODO add numOfUsers and make sure the ToString() si fine
         ack.setOptionalData(userList.toString());
         connections.send(connectionId, ack);
     }

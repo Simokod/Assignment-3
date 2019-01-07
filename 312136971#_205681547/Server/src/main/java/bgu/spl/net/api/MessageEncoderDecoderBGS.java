@@ -159,7 +159,7 @@ public class MessageEncoderDecoderBGS implements MessageEncoderDecoder<BGSMessag
             bytes.add(nextByte);
             bytesCounter++;
             byte[] primitiveArr = getPrimitiveBytes(bytes.subList(4, 5));    // converting the ByteArray to a byteArray
-            ((FollowMessage) msg).setNumOfUsers(bytesToShort(primitiveArr)); //  number of users to follow\unfollow
+            ((FollowMessage) msg).setNumOfUsers(bytesToShort(primitiveArr)); //  number of users to follow/unfollow
             return null;
         }
         // handles the content of the user list, inserts the users into a list
