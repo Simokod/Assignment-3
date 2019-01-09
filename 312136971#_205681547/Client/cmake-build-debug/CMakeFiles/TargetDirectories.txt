@@ -1,0 +1,3 @@
+/home/simo/Desktop/Assignment3/Client/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/home/simo/Desktop/Assignment3/Client/cmake-build-debug/CMakeFiles/Assignment3.dir
+/home/simo/Desktop/Assignment3/Client/cmake-build-debug/CMakeFiles/edit_cache.dir

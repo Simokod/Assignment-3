@@ -3,15 +3,17 @@
 
 #include "BGSEncoder.h"
 #include "ConnectionHandler.h"
-using namespace std;
+#include <mutex>
+
 
 class ReadKeyboard {
 private:
-    std::string input;
-    BGSEncoderDecoder encdec;
-    ConnectionHandler *handler;
+    std::string _input;
+    BGSEncoder _encdec;
+    ConnectionHandler &_handler;
+    std::mutex &_mutex;
 public:
-    explicit ReadKeyboard(ConnectionHandler *handler);
+    ReadKeyboard(ConnectionHandler &handler, std::mutex &mutex);
     void operator()();
 };
 

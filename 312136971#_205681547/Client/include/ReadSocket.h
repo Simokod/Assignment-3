@@ -3,24 +3,26 @@
 
 #include "ConnectionHandler.h"
 #include "BGSEncoder.h"
+#include <mutex>
 
 using namespace std;
 
 
 class ReadSocket {
 private:
-    ConnectionHandler *handler;
+    ConnectionHandler &_handler;
+    std::mutex &_mutex;
 
     msgType decodeOpCode(char* bytes);
     short bytesToShort(char* bytesArr);
     bool decodeNotification();
     bool decodeError();
     bool decodeACK();
-    void decodeACKFollowOrUserlist(short opCode);
-    void decodeACKStat();
+    bool decodeACKFollowOrUserlist(short opCode);
+    bool decodeACKStat();
 
 public:
-    explicit ReadSocket(ConnectionHandler *handler);
+    ReadSocket(ConnectionHandler &handler, mutex &mutex);
     void operator()();
 };
 

@@ -1,28 +1,26 @@
-cmake_minimum_required(VERSION 3.13)
-project(client)
+CFLAGS:=-c -Wall -Weffc++ -g -std=c++11 -Iinclude
+LDFLAGS:=-lboost_system -lpthread -lboost_locale -lboost_thread
 
-set(CMAKE_CXX_STANDARD 14)
+all: BGSclient
+	gcc -o bin/BGSClient bin/ConnectionHandler.o bin/BGSEncoder.o bin/ReadSocket bin/ReadKeyboard.o bin/BGSClient.o  $(LDFLAGS)
 
+BGSclient: bin/BGSClient bin/ConnectionHandler.o bin/BGSEncoder.o bin/ReadSocket bin/ReadKeyboard.o bin/BGSClient.o
+	
+bin/ConnectionHandler.o: src/ConnectionHandler.cpp
+	gcc $(CFLAGS) -o bin/ConnectionHandler.o src/ConnectionHandler.cpp
 
-find_package(Boost COMPONENTS system filesystem thread REQUIRED)
-IF (Boost_FOUND)
-    include_directories(${Boost_INCLUDE_DIR})
-endif()
+bin/BGSClient.o: src/BGSClient.cpp
+	gcc $(CFLAGS) -o bin/BGSClient.o src/BGSClient.cpp
 
-SET(CMAKE_CXX_FLAGS -pthread)
-SET(CMAKE_CXX_FLAGS -lboost_thread)
+bin/ReadKeyboard.o: src/ReadKeyboard.cpp
+	gcc $(CFLAGS) -o bin/ReadKeyboard.o src/ReadKeyboard.cpp
 
-include_directories(include)
-add_executable(client
-        include/BGSEncoder.h
-        include/ConnectionHandler.h
-        include/ReadKeyboard.h
-        include/ReadSocket.h
-        src/BGSEncoder.cpp
-        src/client.cpp
-        src/ConnectionHandler.cpp
-        src/ReadKeyboard.cpp
-        src/ReadSocket.cpp
-        makefile)
+bin/ReadSocket.o: src/ReadSocket.cpp
+	gcc $(CFLAGS) -o bin/ReadSocket.o src/ReadSocket.cpp
 
-target_link_libraries( client LINK_PUBLIC ${Boost_LIBRARIES} )
+bin/BGSEncoder.o: src/BGSEncoder.cpp
+	gcc $(CFLAGS) -o bin/BGSEncoder.o src/BGSEncoder.cpp
+	
+.PHONY: clean
+clean:
+	rm -f bin/*
