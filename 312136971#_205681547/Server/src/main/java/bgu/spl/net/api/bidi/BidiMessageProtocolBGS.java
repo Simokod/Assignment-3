@@ -28,15 +28,24 @@ public class BidiMessageProtocolBGS implements BidiMessagingProtocol<BGSMessage>
 
     //      Processing messages
     public void process(BGSMessage message) {
+        System.out.println("procces");//TODO
         switch (message.getOpCode()) {
             case 1: processRegister(message);
+                break;
             case 2: processLogin(message);
+                break;
             case 3: processLogout(message);
+                break;
             case 4: processFollow(message);
+                break;
             case 5: processPost(message);
+                break;
             case 6: processPM(message);
+                break;
             case 7: processUserList(message);
+                break;
             case 8: processStat(message);
+                break;
         }
     }
     //      Register
@@ -48,6 +57,7 @@ public class BidiMessageProtocolBGS implements BidiMessagingProtocol<BGSMessage>
             return;
         }
         dataBase.addAccount(userName, password);
+        System.out.println("sending ack");//TODO
         connections.send(connectionId, new ACKMessage(message.getOpCode()));
     }
     //      Login
@@ -66,6 +76,7 @@ public class BidiMessageProtocolBGS implements BidiMessagingProtocol<BGSMessage>
         dataBase.connect(connectionId, userName);
         dataBase.logIn(userName);
         currentUser = userName;
+        connections.send(connectionId, new ACKMessage(message.getOpCode()));
         //  getting all notifications that happened when the user was logged out
         ConcurrentLinkedQueue<NotificationMessage> notifications = dataBase.getUnsentMessages(currentUser);
         for(NotificationMessage noti: notifications)
@@ -160,7 +171,6 @@ public class BidiMessageProtocolBGS implements BidiMessagingProtocol<BGSMessage>
         users.append(listSize).append(" ");
         for (String user: userList)
             users.append(user).append(" ");
-        users.deleteCharAt(users.length()-1);   // deleting last space
 
         ack.setOptionalData(users.toString());
         connections.send(connectionId, ack);

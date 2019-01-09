@@ -20,7 +20,7 @@ public class ConnectionsImpl<T> implements Connections<T> {
     public boolean send(int connectionId, T msg) {
         ConnectionHandler client = clients.get(connectionId);
         client.send(msg);
-        return true;            // TODO why boolean
+        return true;
     }
 
     @Override
@@ -32,7 +32,7 @@ public class ConnectionsImpl<T> implements Connections<T> {
     public void disconnect(int connectionId) {
         try {
             clients.get(connectionId).close();
-        } catch (IOException e) {      // TODO check sout and check if possible null
+        } catch (IOException e) {
             System.out.println("disconnected");
         }
         clients.remove(connectionId);

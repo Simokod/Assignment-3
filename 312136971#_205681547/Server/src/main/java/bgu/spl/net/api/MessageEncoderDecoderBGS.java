@@ -41,7 +41,7 @@ public class MessageEncoderDecoderBGS implements MessageEncoderDecoder<BGSMessag
             case STAT:
                 return decodeNextByteStat(nextByte);
             default:
-                return null;       //TODO change default return
+                return null;
         }
     }
 
@@ -75,7 +75,7 @@ public class MessageEncoderDecoderBGS implements MessageEncoderDecoder<BGSMessag
                 msg = new StatMessage();
                 return OpCodesEnum.STAT;
             default:
-                return null;       // TODO change default msg
+                return null;
         }
     }
 
@@ -86,29 +86,30 @@ public class MessageEncoderDecoderBGS implements MessageEncoderDecoder<BGSMessag
             if (nextByte == '\0')
                 ((RegisterMessage) msg).increaseCounter();
             bytes.add(nextByte);
-            return null;
-        } else {
-            byte[] bytesArray = getPrimitiveBytes(bytes);
-            // getting username
-            int i = 2;
-            while (bytes.get(i) != '\0') {
-                i++;
-            }
-            String userName = new String(bytesArray, 2, i - 2, StandardCharsets.UTF_8);
-            // getting password
-            int j = i + 1;
-            while (bytes.get(j) != '\0') {
-                j++;
-            }
-            String password = new String(bytesArray, i + 1, j - (i + 1), StandardCharsets.UTF_8);
+            if (((RegisterMessage) msg).getParamCounter() == 2) {
+                byte[] bytesArray = getPrimitiveBytes(bytes);
+                // getting username
+                int i = 2;
+                while (bytes.get(i) != '\0') {
+                    i++;
+                }
+                String userName = new String(bytesArray, 2, i - 2, StandardCharsets.UTF_8);
+                // getting password
+                int j = i + 1;
+                while (bytes.get(j) != '\0') {
+                    j++;
+                }
+                String password = new String(bytesArray, i + 1, j - (i + 1), StandardCharsets.UTF_8);
 
-            ((RegisterMessage) msg).setUserName(userName);
-            ((RegisterMessage) msg).setPassword(password);
-            // clearing
-            bytes.clear();
-            bytesCounter = 0;
-            return msg;
+                ((RegisterMessage) msg).setUserName(userName);
+                ((RegisterMessage) msg).setPassword(password);
+                // clearing
+                bytes.clear();
+                bytesCounter = 0;
+                return msg;
+            }
         }
+        return null;
     }
 
     //      Login
@@ -117,25 +118,27 @@ public class MessageEncoderDecoderBGS implements MessageEncoderDecoder<BGSMessag
             if (nextByte == '\0')
                 ((LoginMessage) msg).increaseCounter();
             bytes.add(nextByte);
-            return null;
-        } else {
-            byte[] bytesArray = getPrimitiveBytes(bytes);
-            // getting username
-            int i = 2;
-            while (bytes.get(i) != '\0') i++;
-            String userName = new String(bytesArray, 2, i - 2, StandardCharsets.UTF_8);
-            // getting password
-            int j = i + 1;
-            while (bytes.get(j) != '\0') j++;
-            String password = new String(bytesArray, i + 1, j - (i + 1), StandardCharsets.UTF_8);
+            if (((LoginMessage) msg).getParamCounter() == 2)
+            {
+                 byte[] bytesArray = getPrimitiveBytes(bytes);
+                  // getting username
+                 int i = 2;
+                 while (bytes.get(i) != '\0') i++;
+                 String userName = new String(bytesArray, 2, i - 2, StandardCharsets.UTF_8);
+              // getting password
+                 int j = i + 1;
+                 while (bytes.get(j) != '\0') j++;
+                  String password = new String(bytesArray, i + 1, j - (i + 1), StandardCharsets.UTF_8);
 
-            ((LoginMessage) msg).setUserName(userName);
-            ((LoginMessage) msg).setPassword(password);
-            // clearing
-            bytes.clear();
-            bytesCounter = 0;
-            return msg;
+                  ((LoginMessage) msg).setUserName(userName);
+                   ((LoginMessage) msg).setPassword(password);
+                   // clearing
+                   bytes.clear();
+                     bytesCounter = 0;
+                 return msg;
+            }
         }
+        return null;
     }
 
     //      Follow
@@ -210,7 +213,8 @@ public class MessageEncoderDecoderBGS implements MessageEncoderDecoder<BGSMessag
                 ((PMMessage) msg).increaseCounter();
             bytes.add(nextByte);
             return null;
-        } else {
+        }
+        if (((PMMessage) msg).getParamCounter() == 2) {
             byte[] bytesArray = getPrimitiveBytes(bytes);
             // getting username to send to
             int i = 2;
@@ -228,6 +232,7 @@ public class MessageEncoderDecoderBGS implements MessageEncoderDecoder<BGSMessag
             bytes.clear();
             return msg;
         }
+        return null;
     }
 
     //      Stat
@@ -245,11 +250,12 @@ public class MessageEncoderDecoderBGS implements MessageEncoderDecoder<BGSMessag
     }
 
     public byte[] encode(BGSMessage message) {
+        System.out.println("encode");//TODO
         switch (message.getOpCode()) {
             case 9: return encodeNotification(message);
             case 10: return encodeACK(message);
             case 11: return encodeError(message);
-            default: return null;       // TODO check what is the default
+            default: return null;
         }
     }
     // ----------------------------------  Encoders  -------------------------------------
@@ -260,11 +266,11 @@ public class MessageEncoderDecoderBGS implements MessageEncoderDecoder<BGSMessag
 
         String postingUser = ((NotificationMessage)message).getPostingUser();
         bytesList.addAll(getNonPrimitiveBytes(postingUser.getBytes()));
-        bytesList.add((byte)'\0');  // TODO check if good char-to-byte transformation
+        bytesList.add((byte)'\0');
 
         String content = ((NotificationMessage)message).getContent();
         bytesList.addAll(getNonPrimitiveBytes(content.getBytes()));
-        bytesList.add((byte)'\0');  // TODO same
+        bytesList.add((byte)'\0');
         return getPrimitiveBytes(bytesList);
     }
     //      ACK
@@ -272,6 +278,7 @@ public class MessageEncoderDecoderBGS implements MessageEncoderDecoder<BGSMessag
         byte[] opBytes = shortToBytes((short) 10);
         byte[] opMessageBytes = shortToBytes( ((ACKMessage)msg).getMessageOpCode());
         byte[] both = combine(opBytes, opMessageBytes);
+
         String optionalData = ((ACKMessage)msg).getOptionalData();
         if( optionalData == null)
             return both;
@@ -307,15 +314,16 @@ public class MessageEncoderDecoderBGS implements MessageEncoderDecoder<BGSMessag
         short numOfUsers = Short.parseShort(numOfUsersStr);
         byteArray = combine(byteArray, shortToBytes(numOfUsers));
         //  adding string bytes
-        String userNameList = data.substring(firstSpaceIndex);
-        int lastIndex = userNameList.indexOf(' ');
+        String userNameList = data.substring(firstSpaceIndex+1);
+        int spaceIndex = userNameList.indexOf(' ');
         LinkedList<Byte> users = new LinkedList<>();
-        while(lastIndex!=-1)
+        while(spaceIndex!=-1)
         {
-            String user = userNameList.substring(lastIndex, userNameList.indexOf(' ', lastIndex+1));
+            String user = userNameList.substring(0, userNameList.indexOf(' '));
+            userNameList = userNameList.substring(userNameList.indexOf(' ')+1);
             users.addAll(getNonPrimitiveBytes(user.getBytes()));
             users.add((byte)'\0');
-            lastIndex = userNameList.indexOf(' ', lastIndex+1);
+            spaceIndex = userNameList.indexOf(' ');
         }
         return combine(byteArray, getPrimitiveBytes(users));
     }
@@ -323,6 +331,10 @@ public class MessageEncoderDecoderBGS implements MessageEncoderDecoder<BGSMessag
     private byte[] encodeError(BGSMessage message) {
         byte[] opCode = shortToBytes(message.getOpCode());
         byte[] msgOpCode = shortToBytes(((ErrorMessage)message).getMsgOpCode());
+        System.out.print("sending error: ");
+        for(int i=0;i<combine(opCode, msgOpCode).length;i++)
+            System.out.print(combine(opCode, msgOpCode)[i]+", ");//TODO
+        System.out.println();
         return combine(opCode, msgOpCode);
     }
 

@@ -45,6 +45,8 @@ public abstract class BaseServer<T> implements Server<T> {
 
                 Socket clientSock = serverSock.accept();
 
+                System.out.println("server connected to client");
+
                 BlockingConnectionHandler<T> handler = new BlockingConnectionHandler<>(
                         clientSock, encdecFactory.get(), protocolFactory.get(),
                         connectionId++, connections);

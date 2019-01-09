@@ -4,10 +4,12 @@ import bgu.spl.net.api.MessageEncoderDecoder;
 import bgu.spl.net.api.bidi.BidiMessagingProtocol;
 import bgu.spl.net.api.bidi.ConnectionsImpl;
 import bgu.spl.net.srv.bidi.ConnectionHandler;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.net.SocketException;
 
 public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler<T> {
 
@@ -38,29 +40,30 @@ public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler
             protocol.start(connectionId, connections);  // TODO check if need to change location
             connections.addClient(connectionId, this);
 
-            while (!protocol.shouldTerminate() && connected && (read = in.read()) >= 0) {
+            while (!protocol.shouldTerminate() && connected && ((read = in.read()) >= 0)) {
                 T nextMessage = encdec.decodeNextByte((byte) read);
                 if (nextMessage != null) {
                     protocol.process(nextMessage);
+                    System.out.println("starting process");//TODO
                 }
             }
 
-        } catch (IOException ex) {
-            ex.printStackTrace();
+        } catch (SocketException ex) {
+            System.out.println("disconnected exception");//TODO
+        } catch (IOException e) {
+            System.out.println("IO Exception");//TODO
         }
-
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
         connected = false;
-        sock.close();
         connections.disconnect(connectionId);
     }
 
     @Override
     public void send(T msg) {
-        try (Socket sock = this.sock) {
+        try {
             out = new BufferedOutputStream(sock.getOutputStream());
             out.write(encdec.encode(msg));
             out.flush();
