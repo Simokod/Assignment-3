@@ -11,12 +11,17 @@ ReadKeyboard::ReadKeyboard(ConnectionHandler &connectionHandler, mutex &mutex): 
 
 void ReadKeyboard::operator()(){
     while(!_handler.ShouldTerminate()) {
-        cin >> _input;
-        vector<char> *bytes = _encdec.encode(_input);
-        int size = (int) bytes->size();
+        const short bufsize = 1024;
+        char buf[bufsize];
+        cin.getline(buf, bufsize);
+        string line(buf);
+
+        vector<char> bytes = _encdec.encode(line);
+
+        int size = (int) bytes.size();
         char bytesArr[size];
-        copy(bytes->begin(), bytes->end(), bytesArr);
-        bytes->clear();
+
+        copy(bytes.begin(), bytes.end(), bytesArr);
 
         lock_guard<mutex> lock(_mutex);
         if (!_handler.sendBytes(bytesArr, size)) {

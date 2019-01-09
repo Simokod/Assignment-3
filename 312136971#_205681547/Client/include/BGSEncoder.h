@@ -7,28 +7,29 @@
 #include <locale>
 using namespace std;
 
-enum msgType {REGISTER, LOGIN, LOGOUT, FOLLOW, POST, PM, USERLIST, STAT, NOTIFICATION, ACK, ERROR, UNDEFINED };
+enum msgType {UNDEFINED, REGISTER, LOGIN, LOGOUT, FOLLOW, POST, PM, USERLIST, STAT, NOTIFICATION, ACK, ERROR};
 
 class BGSEncoder{
 private:
-    vector<char> *bytesEnc;
+    vector<char> bytesEnc;
 
-    vector<char> *encodeRegister(string &line);
-    vector<char> *encodeLogin(string &line);
-    vector<char> *encodeLogout(string &line);
-    vector<char> *encodeFollow(string &line);
-    vector<char> *encodePost(string &line);
-    vector<char> *encodePM(string &line);
-    vector<char> *encodeUserlist(string &line);
-    vector<char> *encodeStat(string &line);
+    vector<char> &encodeRegister(string &line);
+    vector<char> &encodeLogin(string &line);
+    vector<char> &encodeLogout(string &line);
+    vector<char> &encodeFollow(string &line);
+    vector<char> &encodePost(string &line);
+    vector<char> &encodePM(string &line);
+    vector<char> &encodeUserlist(string &line);
+    vector<char> &encodeStat(string &line);
 
     void shortToBytes (short num, char* bytesArr);
     void getOpCodeBytes(short opCode);
     void getStringBytes(string &str);
     msgType getENum(string &type);
+
 public:
-    vector<char> *encode(string &line);
+    vector<char> &encode(string &line);
 
-
+    BGSEncoder();
 };
 #endif //ASSIGNMENT3_BGSENCODERDECODER_H

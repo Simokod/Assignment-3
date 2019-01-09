@@ -7,6 +7,7 @@ ReadSocket::ReadSocket(ConnectionHandler &connectionHandler, mutex &mutex):
 void ReadSocket::operator()(){
     while(!_handler.ShouldTerminate())
     {
+        cout << "started a new loop" << endl;//TODO
         char opBytes[2];
         if(!_handler.getBytes(opBytes, 2)) {
             _handler.terminate();
@@ -33,9 +34,16 @@ void ReadSocket::operator()(){
 msgType ReadSocket::decodeOpCode(char* bytes) {
     short op=bytesToShort(bytes);
     switch(op){
+        case 1: return REGISTER;
+        case 2: return LOGIN;
+        case 3: return LOGOUT;
+        case 4: return FOLLOW;
+        case 7: return USERLIST;
+        case 8: return STAT;
         case 9: return NOTIFICATION;
         case 10: return ACK;
-        default: return ERROR;
+        case 11: return ERROR;
+        default: return UNDEFINED;
     }
 }
 short ReadSocket::bytesToShort(char* bytesArr){
@@ -71,7 +79,7 @@ bool ReadSocket::decodeError() {
     char msgOpCode[2];
     if(!_handler.getBytes(msgOpCode, 2))
         return false;
-    cout << "ERROR" + to_string(msgOpCode[0]) + to_string(msgOpCode[1]) << endl;
+    cout << "ERROR " + to_string(msgOpCode[0]) + to_string(msgOpCode[1]) << endl;
     return true;
 }
 
@@ -79,13 +87,16 @@ bool ReadSocket::decodeACK() {
     char msgOpCode[2];
     if(!_handler.getBytes(msgOpCode, 2))
         return false;
+
     switch(decodeOpCode(msgOpCode)){
         case REGISTER:
-            cout << "registered successfully!" << endl;
+            cout << "ACK 1" << endl;
             return true;
-
+        case LOGIN:
+            cout << "ACK 2" << endl;
+            return true;
         case LOGOUT:
-            cout << "logged out" << endl;
+            cout << "ACK 3" << endl;
             return false;
 
         case FOLLOW:
@@ -132,7 +143,7 @@ bool ReadSocket::decodeACKStat() {
         return false;
     short numFollowing = bytesToShort(bytes);
 
-    cout << "ACK " << "8 " + to_string(numPosts) + " " + to_string(numFollowers) + " " + to_string(numFollowing) << endl;
+    cout << "ACK 8 " + to_string(numPosts) + " " + to_string(numFollowers) + " " + to_string(numFollowing) << endl;
     return true;
 }
 

@@ -38,9 +38,8 @@ bool ConnectionHandler::getBytes(char bytes[], unsigned int bytesToRead) {
     size_t tmp = 0;
 	boost::system::error_code error;
     try {
-        while (!error && bytesToRead > tmp ) {
-			tmp += socket_.read_some(boost::asio::buffer(bytes+tmp, bytesToRead-tmp), error);			
-        }
+        while (!error && bytesToRead > tmp )
+			tmp += socket_.read_some(boost::asio::buffer(bytes+tmp, bytesToRead-tmp), error);
 		if(error)
 			throw boost::system::system_error(error);
     } catch (std::exception& e) {

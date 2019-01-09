@@ -14,7 +14,7 @@ int main (int argc, char *argv[]) {
         cerr << "Usage: " << argv[0] << " host port" << endl << endl;
         return -1;
     }
-    cout << "client connected to server" << endl;
+    cout << "connected to server" << endl;
     string host = argv[1];
     short port = atoi(argv[2]);
 
@@ -27,8 +27,6 @@ int main (int argc, char *argv[]) {
 
     ReadSocket socketReader(handler, mutex);
     ReadKeyboard keyboardReader(handler, mutex);
-
-    cout << "starting threads" << endl;
 
     thread keyboardThread(&ReadKeyboard::operator(), keyboardReader);
     thread socketThread(&ReadSocket::operator(), socketReader);
