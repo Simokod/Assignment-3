@@ -22,10 +22,9 @@ private:
     vector<char> *encodeUserlist(string &line);
     vector<char> *encodeStat(string &line);
 
- //   short bytesToShort(vector<char> bytesArr);
     void shortToBytes (short num, char* bytesArr);
     void getOpCodeBytes(short opCode);
-    void getBytes(string &str);
+    void getStringBytes(string &str);
     msgType getENum(string &type);
 public:
     vector<char> *encode(string &line);

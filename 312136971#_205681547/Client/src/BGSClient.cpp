@@ -1,7 +1,9 @@
 #include <iostream>
 #include <thread>
 #include <mutex>
-#include <ConnectionHandler.h>
+#include <stdlib.h>
+
+#include "ConnectionHandler.h"
 #include "ReadKeyboard.h"
 #include "ReadSocket.h"
 
@@ -12,7 +14,8 @@ int main (int argc, char *argv[]) {
         cerr << "Usage: " << argv[0] << " host port" << endl << endl;
         return -1;
     }
-    std::string host = argv[1];
+    cout << "client connected to server" << endl;
+    string host = argv[1];
     short port = atoi(argv[2]);
 
     ConnectionHandler handler(host, port);
@@ -25,8 +28,10 @@ int main (int argc, char *argv[]) {
     ReadSocket socketReader(handler, mutex);
     ReadKeyboard keyboardReader(handler, mutex);
 
-    thread keyboardThread(&ReadKeyboard::operator(), &keyboardReader);
-    thread socketThread(&ReadSocket::operator(), &socketReader);
+    cout << "starting threads" << endl;
+
+    thread keyboardThread(&ReadKeyboard::operator(), keyboardReader);
+    thread socketThread(&ReadSocket::operator(), socketReader);
 
     keyboardThread.join();
     socketThread.join();

@@ -2,7 +2,7 @@
 #include <iostream>
 
 #include "ReadKeyboard.h"
-#include "BGSEncoder.cpp"
+#include "BGSEncoder.h"
 #include "ConnectionHandler.h"
 using namespace std;
 
