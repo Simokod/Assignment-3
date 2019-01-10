@@ -1,6 +1,5 @@
 #include <iostream>
 #include <thread>
-#include <mutex>
 #include <stdlib.h>
 
 #include "ConnectionHandler.h"
@@ -23,10 +22,10 @@ int main (int argc, char *argv[]) {
         cerr << "Cannot connect to " << host << ":" << port << endl;
         return 1;
     }
-    mutex mutex;
 
-    ReadSocket socketReader(handler, mutex);
-    ReadKeyboard keyboardReader(handler, mutex);
+
+    ReadSocket socketReader(handler);
+    ReadKeyboard keyboardReader(handler);
 
     thread keyboardThread(&ReadKeyboard::operator(), keyboardReader);
     thread socketThread(&ReadSocket::operator(), socketReader);

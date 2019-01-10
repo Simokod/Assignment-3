@@ -3,12 +3,12 @@ package bgu.spl.net.api.Messages;
 
 public class PMMessage implements BGSMessage {
 
-    private short opCode = 6;
+    private final short OPCODE = 6;
     private int paramCounter = 0;
     private String userName;
     private String content;
 
-    public short getOpCode() { return opCode; }
+    public short getOpCode() { return OPCODE; }
     public void increaseCounter() { this.paramCounter++; }
     public int getParamCounter() { return paramCounter; }
 

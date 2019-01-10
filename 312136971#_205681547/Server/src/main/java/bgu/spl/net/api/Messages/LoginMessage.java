@@ -2,17 +2,16 @@ package bgu.spl.net.api.Messages;
 
 public class LoginMessage implements BGSMessage {
 
-    private short opCode;
+    private final short OPCODE = 2;
     private String userName;
     private String password;
     private int paramCounter;
 
     public LoginMessage(){
         this.paramCounter = 0;
-        this.opCode = 2;
     }
 
-    public short getOpCode() { return opCode; }
+    public short getOpCode() { return OPCODE; }
     public int getParamCounter() { return paramCounter; }
     public void increaseCounter() { this.paramCounter++; }
     public String getUserName() { return userName; }

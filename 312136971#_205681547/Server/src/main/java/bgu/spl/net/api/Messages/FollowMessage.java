@@ -4,6 +4,8 @@ import java.util.LinkedList;
 
 public class FollowMessage implements BGSMessage {
 
+    private final short OPCODE = 4;
+
     private LinkedList<String> users;
     private boolean follow;
     private int numOfUsers;
@@ -18,7 +20,7 @@ public class FollowMessage implements BGSMessage {
         lastZeroIndex = 4;
     }
 
-    public short getOpCode() { return 0; }
+    public short getOpCode() { return OPCODE; }
 
     public LinkedList<String> getUsers(){ return users; }
     public void addUser(String user){ users.add(user); }

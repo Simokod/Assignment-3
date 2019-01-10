@@ -28,7 +28,6 @@ public class BidiMessageProtocolBGS implements BidiMessagingProtocol<BGSMessage>
 
     //      Processing messages
     public void process(BGSMessage message) {
-        System.out.println("procces");//TODO
         switch (message.getOpCode()) {
             case 1: processRegister(message);
                 break;
@@ -46,18 +45,26 @@ public class BidiMessageProtocolBGS implements BidiMessagingProtocol<BGSMessage>
                 break;
             case 8: processStat(message);
                 break;
+            case 99:                                    // disconnecting the client from the server after LOGOUT
+                connections.disconnect(connectionId);
+                break;
         }
     }
     //      Register
     private void processRegister(BGSMessage message) {
-        String userName = ((RegisterMessage)message).getUserName();
-        String password = ((RegisterMessage)message).getPassword();
-        if(dataBase.isRegistered(userName)) {
+        if(isLoggedIn) {
             connections.send(connectionId, new ErrorMessage(message.getOpCode()));
             return;
         }
-        dataBase.addAccount(userName, password);
-        System.out.println("sending ack");//TODO
+        String userName = ((RegisterMessage)message).getUserName();
+        String password = ((RegisterMessage)message).getPassword();
+        synchronized (dataBase.getRegisterLock()) {
+            if (dataBase.isRegistered(userName)) {
+                connections.send(connectionId, new ErrorMessage(message.getOpCode()));
+                return;
+            }
+            dataBase.addAccount(userName, password);
+        }
         connections.send(connectionId, new ACKMessage(message.getOpCode()));
     }
     //      Login
@@ -65,16 +72,19 @@ public class BidiMessageProtocolBGS implements BidiMessagingProtocol<BGSMessage>
         String userName = ((LoginMessage)message).getUserName();
         String password = ((LoginMessage)message).getPassword();
 
-        if(!dataBase.isRegistered(userName) ||
-        !dataBase.isMatching(userName,password) ||
-         dataBase.isLoggedIn(userName) || isLoggedIn)
-        {
-            connections.send(connectionId, new ErrorMessage(message.getOpCode()));
-            return;
+        synchronized (dataBase.getMultiLock()) {
+            if(!dataBase.isRegistered(userName) ||
+            !dataBase.isMatching(userName,password) ||
+             dataBase.isLoggedIn(userName) || isLoggedIn)
+            {
+                connections.send(connectionId, new ErrorMessage(message.getOpCode()));
+                return;
+            }
+            dataBase.logIn(userName);
         }
+
         isLoggedIn = true;
         dataBase.connect(connectionId, userName);
-        dataBase.logIn(userName);
         currentUser = userName;
         connections.send(connectionId, new ACKMessage(message.getOpCode()));
         //  getting all notifications that happened when the user was logged out
@@ -84,13 +94,15 @@ public class BidiMessageProtocolBGS implements BidiMessagingProtocol<BGSMessage>
     }
     //      Logout
     private void processLogout(BGSMessage message) {
-        if(!isLoggedIn) {
-            connections.send(connectionId, new ErrorMessage(message.getOpCode()));
-            return;
+        synchronized (dataBase.getMultiLock()) {
+            if(!isLoggedIn) {
+                connections.send(connectionId, new ErrorMessage(message.getOpCode()));
+                return;
+            }
+            isLoggedIn = false;
+            dataBase.logOut(currentUser);
+            connections.send(connectionId, new ACKMessage(message.getOpCode()));
         }
-        isLoggedIn = false;
-        dataBase.logOut(currentUser);
-        connections.send(connectionId, new ACKMessage(message.getOpCode()));
     }
     //      Follow
     private void processFollow(BGSMessage message) {
@@ -103,16 +115,17 @@ public class BidiMessageProtocolBGS implements BidiMessagingProtocol<BGSMessage>
         LinkedList<String> toFollow = ((FollowMessage)message).getUsers();
         int success = 0;
 
-        StringBuilder userList = new StringBuilder(numOfFollows+" ");
+        StringBuilder userList = new StringBuilder();
         if(((FollowMessage)message).isFollow())
             success = addFollows(numOfFollows, toFollow, success, userList);
         else
             success = removeFollows(numOfFollows, toFollow, success, userList);
-        userList.deleteCharAt(userList.length()-1); // deleting last space
+
         if(success == 0) {
             connections.send(connectionId, new ErrorMessage(message.getOpCode()));
             return;
         }
+        userList.insert(0, success+" ");
         ACKMessage ack = new ACKMessage(message.getOpCode());
         ack.setOptionalData(userList.toString());
         connections.send(connectionId, ack);
@@ -123,6 +136,9 @@ public class BidiMessageProtocolBGS implements BidiMessagingProtocol<BGSMessage>
             connections.send(connectionId, new ErrorMessage(message.getOpCode()));
             return;
         }
+
+        connections.send(connectionId, new ACKMessage(message.getOpCode()));
+
         LinkedList<String> taggedUsers = new LinkedList<>();
         String post = ((PostMessage)message).getPost();
         findTags(taggedUsers, post);
@@ -134,10 +150,12 @@ public class BidiMessageProtocolBGS implements BidiMessagingProtocol<BGSMessage>
         for(String user: whoToSendTo)
         {
             NotificationMessage noti = new NotificationMessage(currentUser, post, '1');
-            if(dataBase.isLoggedIn(user))
-                connections.send(dataBase.getId(user), noti);
-            else
-                dataBase.addUnsentNotification(user, noti);
+            synchronized (dataBase.getMultiLock()) {
+                if(dataBase.isLoggedIn(user))
+                    connections.send(dataBase.getId(user), noti);
+                else
+                    dataBase.addUnsentNotification(user, noti);
+            }
         }
         dataBase.savePost(currentUser, post);
     }
@@ -148,13 +166,25 @@ public class BidiMessageProtocolBGS implements BidiMessagingProtocol<BGSMessage>
             connections.send(connectionId, new ErrorMessage(message.getOpCode()));
             return;
         }
-        String pMessage = ((PMMessage)message).getContent();
         String receiver = ((PMMessage)message).getUserName();
+        if(!dataBase.isRegistered(receiver)) {               // sending error in case there is no such user
+            connections.send(connectionId, new ErrorMessage(message.getOpCode()));
+            return;
+        }
+        connections.send(connectionId, new ACKMessage(message.getOpCode()));
+        // making sure no illegal tags happened inside the PM
+        String pMessage = ((PMMessage)message).getContent();
+        if(findIllegalTags(pMessage)){
+            connections.send(connectionId, new ErrorMessage(message.getOpCode()));
+            return;
+        }
         NotificationMessage noti = new NotificationMessage(currentUser, pMessage, '0');
-        if(dataBase.isLoggedIn(receiver))
-            connections.send(dataBase.getId(receiver), noti);
-        else
-            dataBase.addUnsentNotification(receiver, noti);
+        synchronized (dataBase.getMultiLock()) {
+            if(dataBase.isLoggedIn(receiver))                // sending the PM if the user is logged in
+                connections.send(dataBase.getId(receiver), noti);
+            else                                             // saving the PM if the user is not logged in, so he can receive it when he does log in
+                dataBase.addUnsentNotification(receiver, noti);
+        }
         dataBase.saveMessage(currentUser, pMessage);
     }
     //      UserList
@@ -167,11 +197,13 @@ public class BidiMessageProtocolBGS implements BidiMessagingProtocol<BGSMessage>
         ACKMessage ack = new ACKMessage(message.getOpCode());
 
         StringBuilder users = new StringBuilder();
+        // adding num of users
         short listSize=(short)userList.size();
         users.append(listSize).append(" ");
+        // adding names of users
         for (String user: userList)
             users.append(user).append(" ");
-
+        users.deleteCharAt(users.length()-1);       // deleting last space after the names list
         ack.setOptionalData(users.toString());
         connections.send(connectionId, ack);
     }
@@ -190,11 +222,27 @@ public class BidiMessageProtocolBGS implements BidiMessagingProtocol<BGSMessage>
 
 
     //          Private Methods
+    // finding illegal tags in a PM
+    private boolean findIllegalTags(String pMessage) {
+        int atIndex = pMessage.indexOf('@');
+        while(atIndex != -1) {
+            String tag = pMessage.substring(atIndex+1, pMessage.indexOf(' ',atIndex));
+            if(dataBase.isRegistered(tag))
+                return true;
+            atIndex = pMessage.indexOf('@', atIndex+1);
+        }
+        return false;
+    }
+
     // finding all userNames tagged in a post
     private void findTags(LinkedList<String> taggedUsers, String post) {
         int lastIndex = post.indexOf('@');
         while(lastIndex!=-1)
         {
+            if(post.indexOf((' '), lastIndex) == -1) {
+                taggedUsers.add(post.substring(lastIndex + 1));       // in case the post contained no content and only tags
+                return;
+            }
             taggedUsers.add(post.substring(lastIndex+1, post.indexOf(' ', lastIndex)));
             lastIndex = post.indexOf('@', lastIndex+1);
         }
@@ -206,6 +254,8 @@ public class BidiMessageProtocolBGS implements BidiMessagingProtocol<BGSMessage>
                 success++;
                 userList.append(toFollow.get(i)).append(" ");
             }
+        if(success > 0)
+            userList.deleteCharAt(userList.length()-1); // deleting last space
         return success;
     }
     // tries to unfollow all users
@@ -215,6 +265,8 @@ public class BidiMessageProtocolBGS implements BidiMessagingProtocol<BGSMessage>
                 success++;
                 userList.append(toFollow.get(i)).append(" ");
             }
+        if(success > 0)
+            userList.deleteCharAt(userList.length()-1); // deleting last space
         return success;
     }
 }

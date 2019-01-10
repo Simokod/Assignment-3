@@ -37,28 +37,24 @@ public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler
         try (Socket sock = this.sock) { //just for automatic closing
             int read;
             in = new BufferedInputStream(sock.getInputStream());
-            protocol.start(connectionId, connections);  // TODO check if need to change location
+            protocol.start(connectionId, connections);
             connections.addClient(connectionId, this);
 
             while (!protocol.shouldTerminate() && connected && ((read = in.read()) >= 0)) {
                 T nextMessage = encdec.decodeNextByte((byte) read);
                 if (nextMessage != null) {
                     protocol.process(nextMessage);
-                    System.out.println("starting process");//TODO
                 }
-            }
 
-        } catch (SocketException ex) {
-            System.out.println("disconnected exception");//TODO
+            }
         } catch (IOException e) {
-            System.out.println("IO Exception");//TODO
+            System.out.println("IO Exception");
         }
     }
 
     @Override
     public void close() {
         connected = false;
-        connections.disconnect(connectionId);
     }
 
     @Override
@@ -68,7 +64,7 @@ public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler
             out.write(encdec.encode(msg));
             out.flush();
         } catch (IOException e) {
-            System.out.println("error sending");        // TODO remove
+            System.out.println("error sending");
         }
     }
 }

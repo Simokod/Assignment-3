@@ -1,32 +1,35 @@
 package bgu.spl.net.api.bidi;
 
-import bgu.spl.net.api.Messages.BGSMessage;
 import bgu.spl.net.api.Messages.NotificationMessage;
 
-import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class ProtocolDataBase {
 
-    private HashMap<String, String> accounts;    // key = userName, value = password
-    private HashMap<String, Boolean> whoLoggedIn;// key = userName, value = is logged in
-    private HashMap<String, Integer> userHandler;// key = connectionId, value = userName
-    private HashMap<String, LinkedList<String>> followers;  // key = userName, value = list of users following userName
-    private HashMap<String, LinkedList<String>> followees;  // key = userName, value = list of users userName is following
-    private HashMap<String, LinkedList<String>> usersPosts; // key = userName, value = list of posts
-    private HashMap<String, LinkedList<String>> usersPMs;   // key = userName, value = list of private messages the user sent
-    private HashMap<String, ConcurrentLinkedQueue<NotificationMessage>> unsentNotifications;// key = userName, value = queue of notifications received while offline
+    private ConcurrentHashMap<String, String> accounts;    // key = userName, value = password
+    private ConcurrentHashMap<String, Boolean> whoLoggedIn;// key = userName, value = is logged in
+    private ConcurrentHashMap<String, Integer> userHandler;// key = connectionId, value = userName
+    private ConcurrentHashMap<String, LinkedList<String>> followers;  // key = userName, value = list of users following userName
+    private ConcurrentHashMap<String, LinkedList<String>> followees;  // key = userName, value = list of users userName is following
+    private ConcurrentHashMap<String, LinkedList<String>> usersPosts; // key = userName, value = list of posts
+    private ConcurrentHashMap<String, LinkedList<String>> usersPMs;   // key = userName, value = list of private messages the user sent
+    private ConcurrentHashMap<String, ConcurrentLinkedQueue<NotificationMessage>> unsentNotifications;// key = userName, value = queue of notifications received while offline
+    private Object registerLock;
+    private Object multiLock;
 
     public ProtocolDataBase(){
-        accounts = new HashMap<>();
-        whoLoggedIn = new HashMap<>();
-        userHandler = new HashMap<>();
-        followers = new HashMap<>();
-        followees = new HashMap<>();
-        usersPosts = new HashMap<>();
-        usersPMs = new HashMap<>();
-        unsentNotifications = new HashMap<>();
+        accounts = new ConcurrentHashMap<>();
+        whoLoggedIn = new ConcurrentHashMap<>();
+        userHandler = new ConcurrentHashMap<>();
+        followers = new ConcurrentHashMap<>();
+        followees = new ConcurrentHashMap<>();
+        usersPosts = new ConcurrentHashMap<>();
+        usersPMs = new ConcurrentHashMap<>();
+        unsentNotifications = new ConcurrentHashMap<>();
+        registerLock = new Object();
+        multiLock = new Object();
     }
 
     // returns true if there is already a user with that userName
@@ -48,7 +51,10 @@ public class ProtocolDataBase {
         return accounts.get(userName).equals(password);
     }
     // returns true if the user is logged in
-    public boolean isLoggedIn(String userName) { return whoLoggedIn.get(userName); }
+    public boolean isLoggedIn(String userName) {
+        if(!isRegistered(userName))
+            return false;
+        return whoLoggedIn.get(userName); }
     // connects between a userName and a connectionHandler
     public void connect(Integer connectionId, String userName){
         userHandler.put(userName, connectionId);
@@ -64,6 +70,8 @@ public class ProtocolDataBase {
     }
     // tries to make follower follow followee and returns true if succeeds
     public boolean addFollower(String follower, String followee){
+        if(!accounts.containsKey(followee))
+            return false;
         LinkedList<String> thisFollowers = followers.get(followee);
         if(thisFollowers.contains(follower))
             return false;
@@ -73,6 +81,8 @@ public class ProtocolDataBase {
     }
     // tries to remove follower from followee follow list
     public boolean removeFollower(String follower, String followee) {
+        if(!accounts.containsKey(followee))
+            return false;
         followees.get(follower).remove(followee);
         return followers.get(followee).remove(follower);
     }
@@ -93,7 +103,7 @@ public class ProtocolDataBase {
         String str ="";
         str+= (usersPosts.get(userName).size()) + " ";
         str+= (followers.get(userName).size()) + " ";
-        str+= (followees.get(userName).size()) + " ";
+        str+= (followees.get(userName).size());
         return str;
     }
     public void addUnsentNotification(String user, NotificationMessage noti) {
@@ -102,5 +112,13 @@ public class ProtocolDataBase {
 
     public ConcurrentLinkedQueue<NotificationMessage> getUnsentMessages(String user) {
         return unsentNotifications.get(user);
+    }
+
+    public Object getRegisterLock() {
+        return registerLock;
+    }
+
+    public Object getMultiLock() {
+        return multiLock;
     }
 }

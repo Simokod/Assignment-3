@@ -23,7 +23,7 @@ private:
     vector<char> &encodeStat(string &line);
 
     void shortToBytes (short num, char* bytesArr);
-    void getOpCodeBytes(short opCode);
+    void getCodeBytes(short opCode);
     void getStringBytes(string &str);
     msgType getENum(string &type);
 

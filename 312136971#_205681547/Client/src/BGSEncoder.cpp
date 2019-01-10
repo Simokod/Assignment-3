@@ -28,7 +28,7 @@ vector<char> &BGSEncoder::encode (string &line) {
 }
 //      Register
 vector<char> &BGSEncoder::encodeRegister(string &line) {
-    getOpCodeBytes(1);
+    getCodeBytes(1);
 
     string userName = line.substr(0, line.find(' '));
     getStringBytes(userName);
@@ -41,7 +41,7 @@ vector<char> &BGSEncoder::encodeRegister(string &line) {
 }
 //      Login
 vector<char> &BGSEncoder::encodeLogin(string &line) {
-    getOpCodeBytes(2);
+    getCodeBytes(2);
 
     string userName = line.substr(0, line.find(' '));
     getStringBytes(userName);
@@ -55,23 +55,24 @@ vector<char> &BGSEncoder::encodeLogin(string &line) {
 }
 //      Logout
 vector<char> &BGSEncoder::encodeLogout(string &line) {
-    getOpCodeBytes(3);
+    getCodeBytes(3);
     return bytesEnc;
 }
 //      Follow
 vector<char> &BGSEncoder::encodeFollow(string &line) {
-    getOpCodeBytes(4);
+    getCodeBytes(4);
 
     string followUn = line.substr(0,1);
     getStringBytes(followUn);
 
-    line = line.substr(1);
-    string numOfFollows = line.substr(0,line.find(' '));
-    getStringBytes(numOfFollows);
-    bytesEnc.pop_back();
+    line = line.substr(2);
+    string numOfFollowsStr = line.substr(0,line.find(' '));
+
+    auto numOfFollows = (short) stoi(numOfFollowsStr, nullptr, 10);
+    getCodeBytes(numOfFollows);
 
     line = line.substr(line.find(' ')+1);
-    for(int i=0; i<stoi(numOfFollows); i++)
+    for(int i=0; i<numOfFollows; i++)
     {
         string user = line.substr(0, line.find(' '));
         line = line.substr(line.find(' ')+1);
@@ -82,14 +83,14 @@ vector<char> &BGSEncoder::encodeFollow(string &line) {
 }
 //      Post
 vector<char> &BGSEncoder::encodePost(string &line) {
-    getOpCodeBytes(5);
+    getCodeBytes(5);
     getStringBytes(line);
     bytesEnc.push_back('\0');
     return bytesEnc;
 }
 //      PM
 vector<char> &BGSEncoder::encodePM(string &line) {
-    getOpCodeBytes(6);
+    getCodeBytes(6);
     string userName= line.substr(0, line.find(' '));
     getStringBytes(userName);
     bytesEnc.push_back('\0');
@@ -101,12 +102,12 @@ vector<char> &BGSEncoder::encodePM(string &line) {
 }
 //      UserList
 vector<char> &BGSEncoder::encodeUserlist(string &line) {
-    getOpCodeBytes(7);
+    getCodeBytes(7);
     return bytesEnc;
 }
 //      Stat
 vector<char> &BGSEncoder::encodeStat(string &line) {
-    getOpCodeBytes(8);
+    getCodeBytes(8);
     getStringBytes(line);
     bytesEnc.push_back('\0');
     return bytesEnc;
@@ -118,7 +119,7 @@ void BGSEncoder::shortToBytes (short num, char* bytesArr){
     bytesArr[1] = (num & 0xFF);
 }
 //// adding the bytes of the opCode to bytes
-void BGSEncoder::getOpCodeBytes(short opCode) {
+void BGSEncoder::getCodeBytes(short opCode) {
     char opBytes[2];
     shortToBytes(opCode, opBytes);
     bytesEnc.push_back(opBytes[0]);
@@ -127,7 +128,6 @@ void BGSEncoder::getOpCodeBytes(short opCode) {
 //// encoding a string to bytes and adding it to the bytes vector
 void BGSEncoder::getStringBytes(string &str) {
     vector<char> bytes(str.begin(), str.end());
-
     bytesEnc.insert(bytesEnc.end(), bytes.begin(), bytes.end());
 }
 //// returning the corresponding enum

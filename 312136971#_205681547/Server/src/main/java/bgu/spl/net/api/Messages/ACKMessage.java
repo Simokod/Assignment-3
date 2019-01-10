@@ -2,7 +2,7 @@ package bgu.spl.net.api.Messages;
 
 public class ACKMessage implements BGSMessage {
 
-    private short opCode = 10;
+    private final short OPCODE = 10;
     private short messageOpCode;
     private String optionalData=null;
 
@@ -11,7 +11,7 @@ public class ACKMessage implements BGSMessage {
 
     }
 
-    public short getOpCode() { return opCode; }
+    public short getOpCode() { return OPCODE; }
     public short getMessageOpCode() { return messageOpCode; }
     public String getOptionalData() { return optionalData; }
 

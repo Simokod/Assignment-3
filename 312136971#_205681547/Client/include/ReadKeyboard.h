@@ -3,7 +3,6 @@
 
 #include "BGSEncoder.h"
 #include "ConnectionHandler.h"
-#include <mutex>
 
 
 class ReadKeyboard {
@@ -11,9 +10,8 @@ private:
     std::string _input;
     BGSEncoder _encdec;
     ConnectionHandler &_handler;
-    std::mutex &_mutex;
 public:
-    ReadKeyboard(ConnectionHandler &handler, std::mutex &mutex);
+    ReadKeyboard(ConnectionHandler &handler);
     void operator()();
 };
 

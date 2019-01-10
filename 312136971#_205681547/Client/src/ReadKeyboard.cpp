@@ -6,8 +6,8 @@
 #include "ConnectionHandler.h"
 using namespace std;
 
-ReadKeyboard::ReadKeyboard(ConnectionHandler &connectionHandler, mutex &mutex): _input(), _encdec(),
-                        _handler(connectionHandler), _mutex(mutex) {}
+ReadKeyboard::ReadKeyboard(ConnectionHandler &connectionHandler): _input(), _encdec(),
+                        _handler(connectionHandler) {}
 
 void ReadKeyboard::operator()(){
     while(!_handler.ShouldTerminate()) {
@@ -20,10 +20,8 @@ void ReadKeyboard::operator()(){
 
         int size = (int) bytes.size();
         char bytesArr[size];
-
         copy(bytes.begin(), bytes.end(), bytesArr);
 
-        lock_guard<mutex> lock(_mutex);
         if (!_handler.sendBytes(bytesArr, size)) {
             _handler.terminate();
             break;

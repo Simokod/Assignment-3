@@ -3,7 +3,7 @@
 
 #include "ConnectionHandler.h"
 #include "BGSEncoder.h"
-#include <mutex>
+
 
 using namespace std;
 
@@ -11,7 +11,6 @@ using namespace std;
 class ReadSocket {
 private:
     ConnectionHandler &_handler;
-    std::mutex &_mutex;
 
     msgType decodeOpCode(char* bytes);
     short bytesToShort(char* bytesArr);
@@ -22,8 +21,10 @@ private:
     bool decodeACKStat();
 
 public:
-    ReadSocket(ConnectionHandler &handler, mutex &mutex);
+    ReadSocket(ConnectionHandler &handler);
     void operator()();
+
+    void sendDisconnect();
 };
 
 

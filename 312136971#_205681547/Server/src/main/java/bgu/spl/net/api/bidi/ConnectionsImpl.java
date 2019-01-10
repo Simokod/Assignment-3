@@ -16,14 +16,14 @@ public class ConnectionsImpl<T> implements Connections<T> {
         clients.put(connectionId, client);
     }
 
-    @Override
+    @Override @SuppressWarnings("unchecked")
     public boolean send(int connectionId, T msg) {
         ConnectionHandler client = clients.get(connectionId);
         client.send(msg);
         return true;
     }
 
-    @Override
+    @Override @SuppressWarnings("unchecked")
     public void broadcast(T msg) {
         clients.forEach((id, client) -> client.send(msg));
     }

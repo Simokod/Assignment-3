@@ -1,13 +1,12 @@
 
 #include "ReadSocket.h"
 
-ReadSocket::ReadSocket(ConnectionHandler &connectionHandler, mutex &mutex):
-                                    _handler(connectionHandler), _mutex(mutex) {}
+ReadSocket::ReadSocket(ConnectionHandler &connectionHandler:
+                                    _handler(connectionHandler) {}
 
 void ReadSocket::operator()(){
     while(!_handler.ShouldTerminate())
     {
-        cout << "started a new loop" << endl;//TODO
         char opBytes[2];
         if(!_handler.getBytes(opBytes, 2)) {
             _handler.terminate();
@@ -38,6 +37,8 @@ msgType ReadSocket::decodeOpCode(char* bytes) {
         case 2: return LOGIN;
         case 3: return LOGOUT;
         case 4: return FOLLOW;
+        case 5: return POST;
+        case 6: return PM;
         case 7: return USERLIST;
         case 8: return STAT;
         case 9: return NOTIFICATION;
@@ -97,14 +98,18 @@ bool ReadSocket::decodeACK() {
             return true;
         case LOGOUT:
             cout << "ACK 3" << endl;
+            sendDisconnect();
             return false;
-
+        case POST:
+            cout << "ACK 5" << endl;
+            return true;
+        case PM:
+            cout << "ACK 6" << endl;
+            return true;
         case FOLLOW:
             return decodeACKFollowOrUserlist(4);
-
         case USERLIST:
             return decodeACKFollowOrUserlist(7);
-
         case STAT:
             return decodeACKStat();
         default: return true;
@@ -116,7 +121,6 @@ bool ReadSocket::decodeACKFollowOrUserlist(short opCode) {
     if(!_handler.getBytes(numOfUsersBytes,2))
         return false;
     short numOfUsers = bytesToShort(numOfUsersBytes);
-
     string userList;
     for(int i=0; i < numOfUsers; i++)
     {
@@ -124,8 +128,9 @@ bool ReadSocket::decodeACKFollowOrUserlist(short opCode) {
         if(!_handler.getFrameAscii(user,'\0'))
             _handler.terminate();
         userList += user + " ";
+        user="";
     }
-    cout << "ACK " + to_string(opCode) + " " + userList << endl;
+    cout << "ACK " + to_string(opCode) + " " + to_string(numOfUsers) + " " + userList << endl;
     return true;
 }
 
@@ -145,5 +150,14 @@ bool ReadSocket::decodeACKStat() {
 
     cout << "ACK 8 " + to_string(numPosts) + " " + to_string(numFollowers) + " " + to_string(numFollowing) << endl;
     return true;
+}
+// sends the server a signal when the client disconnetcs
+void ReadSocket::sendDisconnect() {
+    short num = 99;
+    char logoutBytes[2];
+    logoutBytes[0] = ((num >> 8) & 0xFF);
+    logoutBytes[1] = (num & 0xFF);
+    cout << "sending" << endl;//TODO
+    _handler.sendBytes(logoutBytes, 2);
 }
 

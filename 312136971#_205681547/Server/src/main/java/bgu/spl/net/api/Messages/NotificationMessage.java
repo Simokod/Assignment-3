@@ -3,7 +3,7 @@ package bgu.spl.net.api.Messages;
 
 public class NotificationMessage implements BGSMessage {
 
-    private short opCode = 8;
+    private final short OPCODE = 9;
     private char type;
     private String postingUser;
     private String content;
@@ -13,7 +13,7 @@ public class NotificationMessage implements BGSMessage {
         this.content = content;
         this.type = type;
     }
-    public short getOpCode() { return opCode; }
+    public short getOpCode() { return OPCODE; }
 
     public char getType() { return type; }
 
